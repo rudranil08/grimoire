@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Log in — Grimoire</title>
+  <meta name="description" content="Log in or sign up for Grimoire, the haunted task manager." />
+  <meta name="theme-color" content="#0c0b0a" />
+  <link rel="icon" href="/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <form class="auth-card" id="authForm" novalidate>
+      <a class="brand" href="/" aria-label="Back to the Grimoire home page"><span class="brand-mark" aria-hidden="true">🎃</span><span class="brand-name">Grimoire</span></a>
+      <p class="kicker" id="kicker">Members only</p>
+      <h1 id="heading">Enter the <em>Grimoire</em></h1>
+      <p class="auth-sub" id="sub">Welcome back. The tasks have been waiting.</p>
+
+      <label class="field"><span>Name</span>
+        <input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="24" required aria-describedby="nameHint" />
+        <span class="hint" id="nameHint" hidden>3–24 characters: letters, numbers, <code>_</code> or <code>-</code>.</span>
+      </label>
+      <label class="field"><span>Password</span>
+        <span class="field-row">
+          <input id="password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="200" required />
+          <button type="button" class="reveal" id="reveal" aria-pressed="false" aria-label="Show password">Show</button>
+        </span>
+        <span class="strength" id="strength" data-score="0" hidden aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        <span class="hint" id="passHint" hidden>At least 8 characters. A short phrase works best.</span>
+      </label>
+
+      <p class="error" id="error" role="alert"></p>
+      <button type="submit" class="btn" id="submit">Enter</button>
+      <p class="switch" id="switch"></p>
+    </form>
+  </main>
+  <script src="/auth.js"></script>
+</body>
+</html>

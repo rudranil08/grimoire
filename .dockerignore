@@ -1,0 +1,10 @@
+.git
+.github
+.vscode
+.claude
+data
+node_modules
+test
+*.md
+.env
+.DS_Store

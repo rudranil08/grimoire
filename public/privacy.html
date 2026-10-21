@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy — Grimoire</title>
+  <meta name="description" content="What Grimoire stores, and what it doesn't." />
+  <link rel="icon" href="/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/site.css" />
+</head>
+<body>
+  <header class="nav">
+    <div class="wrap">
+      <a class="brand" href="/" aria-label="Grimoire home"><span class="brand-mark" aria-hidden="true">🎃</span><span class="brand-name">Grimoire</span></a>
+      <nav class="nav-links" aria-label="Main"><a href="/login" data-guest>Log in</a><a class="btn small" href="/signup" data-guest>Sign up free</a><a class="btn small" href="/app" data-member hidden>Open your Grimoire</a></nav>
+    </div>
+  </header>
+  <main class="wrap prose">
+    <p class="kicker">The fine print</p>
+    <h1>Privacy</h1>
+    <p>Short version: we keep only what the app needs to work, and we never sell, share or track it.</p>
+
+    <h2>What we store</h2>
+    <ul>
+      <li><strong>Your account:</strong> your username and a salted, one-way <code>scrypt</code> hash of your password. We can't see your password.</li>
+      <li><strong>Your tasks:</strong> titles, notes, checklists, dates and the other details you enter, plus trophy and streak progress.</li>
+      <li><strong>Sessions:</strong> a hashed session token so you stay logged in for up to 30 days.</li>
+    </ul>
+
+    <h2>Cookies &amp; tracking</h2>
+    <p>One cookie, <code>grimoire_session</code>, keeps you signed in. It's HttpOnly and never used for anything else. There are no ads, analytics or third-party trackers. Fonts are loaded from Google Fonts.</p>
+    <p>Your browser also keeps a local copy of your tasks so the app works offline. Logging out clears it.</p>
+
+    <h2>Sharing</h2>
+    <p>Nothing is public unless you turn on the share poster. It shows task titles, dates and dread levels only — never notes or checklists — and turning it off kills the link immediately. Your calendar-feed link is private; you can replace it any time.</p>
+
+    <h2>Your control</h2>
+    <p>Export everything as JSON from the app footer at any time. Deleting your account (user menu → <em>Delete account</em>) permanently removes your tasks, graveyard, trophies and sessions.</p>
+  </main>
+  <footer class="footer"><div class="wrap"><span>© <span id="year">2026</span> Grimoire</span><nav aria-label="Footer"><a href="/">Home</a><a href="/login">Log in</a></nav></div></footer>
+  <script src="/site.js"></script>
+</body>
+</html>

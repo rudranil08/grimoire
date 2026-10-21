@@ -356,3 +356,36 @@ test("custom spells are stored per user and validated", async () => {
   const other = await register("apprentice");
   assert.deepEqual((await req("GET", "/spells", undefined, other.cookie)).body, []); // not shared across accounts
 });
+
+test("site pages are served at clean URLs, with a themed 404", async () => {
+  const page = async (p) => { const r = await fetch(`http://127.0.0.1:${PORT}${p}`); return { status: r.status, type: r.headers.get("content-type"), text: await r.text() }; };
+  const home = await page("/");
+  assert.equal(home.status, 200);
+  assert.match(home.text, /wouldn't die/i);
+  assert.match((await page("/app")).text, /id="taskList"/);
+  assert.match((await page("/login")).text, /id="authForm"/);
+  assert.match((await page("/signup/")).text, /id="authForm"/);
+  assert.match((await page("/privacy")).text, /Privacy/);
+  const lost = await page("/no-such-page");
+  assert.equal(lost.status, 404);
+  assert.match(lost.type, /text\/html/);
+  assert.match(lost.text, /banished/);
+  assert.equal((await page("/missing.css")).status, 404);
+});
+
+test("auth: behind a trusted proxy, HTTPS gets Secure cookies (off by default)", async () => {
+  const r = await fetch(BASE + "/auth/register", {
+    method: "POST", headers: { "Content-Type": "application/json", "X-Forwarded-Proto": "https" },
+    body: JSON.stringify({ username: "proxyless", password: "long enough pw" }),
+  });
+  // TRUST_PROXY is not set for the test server, so a spoofed header must not change anything
+  assert.doesNotMatch(r.headers.get("set-cookie"), /Secure/);
+  assert.equal(r.headers.get("strict-transport-security"), null);
+});
+
+test("auth: /session reports the signed-in user without erroring for guests", async () => {
+  assert.deepEqual((await req("GET", "/auth/session", undefined, "")).body, { user: null });
+  const { status, body } = await req("GET", "/auth/session");
+  assert.equal(status, 200);
+  assert.equal(body.user.username, "tester");
+});

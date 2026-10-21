@@ -3,13 +3,42 @@
 A Halloween task manager with a retro horror-poster look. Zero-dependency Node app (Node ≥ 22.13):
 static frontend in `public/`, REST API + SQLite (`node:sqlite`) in `server/`.
 
+![CI](https://github.com/rudranil08/grimoire/actions/workflows/ci.yml/badge.svg)
+
+## Quick start
+
 ```bash
-npm run dev     # auto-restarts on server changes → http://localhost:5317
-npm test        # API, auth, parser and static frontend checks (throwaway databases)
+npm run dev     # → http://localhost:5317 (auto-restarts on server changes)
+npm test        # API, auth, parser and frontend checks against throwaway databases
 ```
 
-> **First run with accounts:** the first account you sign up inherits any tasks and trophies that
-> existed before accounts were added.
+No `npm install` needed — there are no dependencies. Optional settings go in `.env` (see `.env.example`).
+
+| Page | What it is |
+|---|---|
+| `/` | Landing page (shows "Open your Grimoire" when you're signed in) |
+| `/signup` · `/login` | Account pages (`?next=/path` returns you where you were) |
+| `/app` | The task manager (redirects to `/login` when signed out) |
+| `/privacy` | What's stored and why |
+| `/share.html#token` | Public read-only poster of someone's list |
+
+> **Upgrading a local install from before accounts:** the first account you sign up inherits existing
+> tasks and trophies. This never happens when `NODE_ENV=production`.
+
+## Deploy
+
+Any host that runs Docker or Node 22.13+ works. You need **one persistent disk** for the SQLite file.
+
+```bash
+docker build -t grimoire .
+docker run -p 8080:8080 -v grimoire-data:/data -e TRUST_PROXY=1 grimoire
+```
+
+On a PaaS (Render, Railway, Fly.io…): use the Dockerfile, mount a volume at `/data`, and set
+`TRUST_PROXY=1` so HTTPS requests get `Secure` cookies + HSTS and rate limits see real client IPs.
+Without Docker: `NODE_ENV=production DB_FILE=/path/on/disk/grimoire.db npm start`.
+
+GitHub Actions runs the test suite on Node 22 and 24 for every push and pull request.
 
 ## Features
 
@@ -56,6 +85,7 @@ cookie. Writes must be same-origin JSON (CSRF guard).
 |---|---|---|
 | POST | `/api/auth/register` · `/api/auth/login` | `{ username, password }` → sets `grimoire_session` (HttpOnly, SameSite=Lax) |
 | GET | `/api/auth/me` | current user (incl. private `feedToken`) |
+| GET | `/api/auth/session` | `{ user }` or `{ user: null }` — never 401 (for public pages) |
 | POST | `/api/auth/logout` | |
 | POST | `/api/auth/logout-all` | end every session for this account |
 | POST | `/api/auth/password` | `{ password, newPassword }` — signs out other sessions |
@@ -83,7 +113,9 @@ cookie. Writes must be same-origin JSON (CSRF guard).
 |---|---|---|
 | `PORT` / `HOST` | `5317` / `127.0.0.1` | |
 | `DB_FILE` | `data/grimoire.db` | |
-| `SECURE_COOKIES` | off | set `1` when serving over HTTPS |
+| `NODE_ENV` | — | `production` binds `0.0.0.0` and disables legacy-data claiming |
+| `TRUST_PROXY` | off | `1` behind a proxy/PaaS: trust `X-Forwarded-For` / `-Proto` |
+| `SECURE_COOKIES` | off | `1` to force `Secure` cookies (HTTPS without a proxy) |
 | `AUTH_RATE_LIMIT` | `10` | login/sign-up attempts per minute per IP |
 | `WRITE_RATE_LIMIT` | `300` | API writes per minute per account |
 

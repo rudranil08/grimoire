@@ -183,7 +183,8 @@
       currentUser = (await request("GET", "/auth/me")).user;
     } catch (err) {
       if (err.status !== 401) return loadOffline();
-      currentUser = await showAuth();
+      location.replace(`/login?next=${encodeURIComponent(location.pathname + location.search)}`);
+      return new Promise(() => {}); // navigating away
     }
     adoptUser(currentUser);
     try {
@@ -267,7 +268,7 @@
   async function logout() {
     try { await request("POST", "/auth/logout"); } catch { /* already gone */ }
     for (const k of [STORAGE_KEY, QUEUE_KEY, STATS_KEY, USER_KEY]) { try { localStorage.removeItem(k); } catch {} }
-    location.reload();
+    location.replace("/");
   }
   $("#userBtn").addEventListener("click", () => {
     const menu = $("#userMenu");
@@ -283,7 +284,7 @@
     if (!confirm("Sign out of Grimoire on every device, including this one?")) return;
     try { await request("POST", "/auth/logout-all"); } catch { /* fall through to local sign-out */ }
     for (const k of [STORAGE_KEY, QUEUE_KEY, STATS_KEY, USER_KEY]) { try { localStorage.removeItem(k); } catch {} }
-    location.reload();
+    location.replace("/");
   });
 
   // Account settings dialog: change password / delete account (both re-check the current password).
@@ -311,7 +312,7 @@
         if (del) {
           await request("DELETE", "/auth/account", { password: $("#acctPass").value });
           for (const k of [STORAGE_KEY, QUEUE_KEY, STATS_KEY, USER_KEY]) { try { localStorage.removeItem(k); } catch {} }
-          location.reload();
+          location.replace("/");
           return;
         }
         await request("POST", "/auth/password", { password: $("#acctPass").value, newPassword: $("#acctNew").value });

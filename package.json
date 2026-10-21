@@ -2,12 +2,14 @@
   "name": "grimoire",
   "version": "1.0.0",
   "private": true,
-  "description": "A haunted Halloween task ledger",
+  "description": "The Tasks That Wouldn't Die \u2014 a Halloween task manager (Node + SQLite, zero dependencies)",
   "type": "module",
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": ">=22.13"
+  },
   "scripts": {
-    "start": "node server/server.js",
-    "dev": "node --watch server/server.js",
+    "start": "node --env-file-if-exists=.env server/server.js",
+    "dev": "node --env-file-if-exists=.env --watch server/server.js",
     "test": "node --test test/*.test.js"
   }
 }

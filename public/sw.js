@@ -1,8 +1,8 @@
 // Service worker: lets Grimoire open offline. Network-first for the app shell (so edits always
 // show up when online), cache fallback when offline. API calls are never cached — the app's own
 // offline queue handles data.
-const CACHE = "grimoire-shell-v1";
-const SHELL = ["/", "/index.html", "/styles.css", "/app.js", "/quickadd.js", "/theme-boot.js", "/icon.svg", "/manifest.webmanifest"];
+const CACHE = "grimoire-shell-v2";
+const SHELL = ["/app", "/app.html", "/styles.css", "/app.js", "/quickadd.js", "/theme-boot.js", "/icon.svg", "/manifest.webmanifest"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -33,6 +33,6 @@ self.addEventListener("fetch", (e) => {
         }
         return res;
       })
-      .catch(() => caches.match(e.request).then((hit) => hit || (e.request.mode === "navigate" ? caches.match("/index.html") : Response.error()))),
+      .catch(() => caches.match(e.request).then((hit) => hit || (e.request.mode === "navigate" ? caches.match("/app") : Response.error()))),
   );
 });

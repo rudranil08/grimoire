@@ -11,10 +11,17 @@ import { hashPassword, verifyPassword, readCookie, sessionCookie, clearCookie, r
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PUBLIC = join(ROOT, "public");
 const PORT = Number(process.env.PORT) || 5317;
-const HOST = process.env.HOST || "127.0.0.1";
+const HOST = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
 const db = openDb(process.env.DB_FILE || join(ROOT, "data", "grimoire.db"));
 
-const SECURE_COOKIES = process.env.SECURE_COOKIES === "1"; // set when serving over HTTPS
+const PRODUCTION = process.env.NODE_ENV === "production";
+const SECURE_COOKIES = process.env.SECURE_COOKIES === "1"; // force Secure cookies (serving over HTTPS)
+const TRUST_PROXY = process.env.TRUST_PROXY === "1";       // behind a reverse proxy / PaaS load balancer
+// Only adopt pre-accounts data on local installs — never hand it to a stranger on a public site.
+const CLAIM_LEGACY = !PRODUCTION && process.env.CLAIM_LEGACY !== "0";
+
+const isSecure = (req) => SECURE_COOKIES || (TRUST_PROXY && String(req.headers["x-forwarded-proto"] || "").split(",")[0].trim() === "https");
+const clientIp = (req) => (TRUST_PROXY && String(req.headers["x-forwarded-for"] || "").split(",")[0].trim()) || req.socket.remoteAddress || "?";
 const loginLimiter = rateLimiter(Number(process.env.AUTH_RATE_LIMIT) || 10, 60_000); // auth attempts / minute / IP
 const writeLimiter = rateLimiter(Number(process.env.WRITE_RATE_LIMIT) || 300, 60_000); // API writes / minute / user
 
@@ -138,6 +145,8 @@ function validateTrophies(body) {
 /* ---------------- auth ---------------- */
 async function authRoutes(req, res, action) {
   const method = req.method;
+  // Like /me but never 401s — for public pages that just want to know "signed in or not?"
+  if (action === "session" && method === "GET") return send(res, 200, { user: db.sessionUser(readCookie(req)) });
   if (action === "me" && method === "GET") {
     const user = db.sessionUser(readCookie(req));
     if (!user) throw new HttpError(401, "Not logged in");
@@ -147,12 +156,12 @@ async function authRoutes(req, res, action) {
     const user = db.sessionUser(readCookie(req));
     if (!user) throw new HttpError(401, "Not logged in");
     const ended = db.endAllSessions(user.id);
-    res.setHeader("Set-Cookie", clearCookie(SECURE_COOKIES));
+    res.setHeader("Set-Cookie", clearCookie(isSecure(req)));
     return send(res, 200, { ended });
   }
   if (action === "logout" && method === "POST") {
     db.deleteSession(readCookie(req));
-    res.setHeader("Set-Cookie", clearCookie(SECURE_COOKIES));
+    res.setHeader("Set-Cookie", clearCookie(isSecure(req)));
     return send(res, 200, { ok: true });
   }
   // ---- account settings (require a live session) ----
@@ -164,7 +173,7 @@ async function authRoutes(req, res, action) {
       const { enabled } = await readJson(req);
       return send(res, 200, { user: db.setSharing(user.id, !!enabled) });
     }
-    if (!loginLimiter(req.socket.remoteAddress || "?")) throw new HttpError(429, "Too many attempts — wait a minute and try again");
+    if (!loginLimiter(clientIp(req))) throw new HttpError(429, "Too many attempts — wait a minute and try again");
     const body = await readJson(req);
     const current = typeof body.password === "string" ? body.password : "";
     if (!(await verifyPassword(current, db.passHashFor(user.id)))) throw new HttpError(403, "That password isn't right");
@@ -173,18 +182,18 @@ async function authRoutes(req, res, action) {
       if (next.length < 8 || next.length > 200) throw new HttpError(400, "New password must be at least 8 characters");
       db.setPassword(user.id, await hashPassword(next));
       const { token, maxAge } = db.createSession(user.id); // keep this device signed in
-      res.setHeader("Set-Cookie", sessionCookie(token, maxAge, SECURE_COOKIES));
+      res.setHeader("Set-Cookie", sessionCookie(token, maxAge, isSecure(req)));
       return send(res, 200, { ok: true });
     }
     if (action === "account" && method === "DELETE") {
       db.deleteUser(user.id);
-      res.setHeader("Set-Cookie", clearCookie(SECURE_COOKIES));
+      res.setHeader("Set-Cookie", clearCookie(isSecure(req)));
       return send(res, 200, { deleted: true });
     }
     throw new HttpError(405, "Method not allowed");
   }
   if ((action === "register" || action === "login") && method === "POST") {
-    if (!loginLimiter(req.socket.remoteAddress || "?")) throw new HttpError(429, "Too many attempts — wait a minute and try again");
+    if (!loginLimiter(clientIp(req))) throw new HttpError(429, "Too many attempts — wait a minute and try again");
     const body = await readJson(req);
     const username = typeof body.username === "string" ? body.username.trim().toLowerCase() : "";
     const password = typeof body.password === "string" ? body.password : "";
@@ -194,7 +203,7 @@ async function authRoutes(req, res, action) {
     let user, status = 200, claimed = 0;
     if (action === "register") {
       if (db.findUser(username)) throw new HttpError(409, "That name is already taken");
-      ({ user, claimed } = db.createUser(username, await hashPassword(password)));
+      ({ user, claimed } = db.createUser(username, await hashPassword(password), { claimLegacy: CLAIM_LEGACY }));
       if (db.forUser(user.id).isEmpty()) seed(db.forUser(user.id));
       status = 201;
     } else {
@@ -204,7 +213,7 @@ async function authRoutes(req, res, action) {
       user = db.userById(row.id);
     }
     const { token, maxAge } = db.createSession(user.id);
-    res.setHeader("Set-Cookie", sessionCookie(token, maxAge, SECURE_COOKIES));
+    res.setHeader("Set-Cookie", sessionCookie(token, maxAge, isSecure(req)));
     return send(res, status, { user, claimed });
   }
   throw new HttpError(404, "Not found");
@@ -369,15 +378,19 @@ async function api(req, res, path) {
 /* ---------------- static ---------------- */
 async function serveStatic(req, res, path) {
   if (req.method !== "GET" && req.method !== "HEAD") throw new HttpError(405, "Method not allowed");
-  const rel = normalize(decodeURIComponent(path === "/" ? "/index.html" : path));
-  const file = join(PUBLIC, rel);
+  const page = PAGES[path.replace(/\/+$/, "") || "/"];
+  const rel = normalize(decodeURIComponent(page || path));
+  let file = join(PUBLIC, rel);
   if (!file.startsWith(PUBLIC)) throw new HttpError(403, "Forbidden");
-  let info;
+  let info, status = 200;
   try {
     info = await stat(file);
     if (!info.isFile()) throw new Error();
   } catch {
-    throw new HttpError(404, "Not found");
+    // Pages get the themed 404; missing assets get a plain one.
+    if (extname(rel) && extname(rel) !== ".html") throw new HttpError(404, "Not found");
+    file = join(PUBLIC, "404.html"); status = 404;
+    info = await stat(file);
   }
   // Revalidate every time (so edits show on refresh) but answer 304 when nothing changed.
   const etag = `W/"${info.size.toString(16)}-${Math.floor(info.mtimeMs).toString(16)}"`;
@@ -387,7 +400,7 @@ async function serveStatic(req, res, path) {
     ETag: etag,
     Vary: "Accept-Encoding",
   };
-  if (req.headers["if-none-match"] === etag) { res.writeHead(304, headers).end(); return; }
+  if (status === 200 && req.headers["if-none-match"] === etag) { res.writeHead(304, headers).end(); return; }
 
   let body = await readFile(file);
   if (COMPRESSIBLE.has(extname(file)) && /\bgzip\b/.test(req.headers["accept-encoding"] || "") && body.length > 1024) {
@@ -398,9 +411,11 @@ async function serveStatic(req, res, path) {
     headers["Content-Encoding"] = "gzip";
   }
   headers["Content-Length"] = body.length;
-  res.writeHead(200, headers);
+  res.writeHead(status, headers);
   res.end(req.method === "HEAD" ? undefined : body);
 }
+// Clean URLs for the site's pages.
+const PAGES = { "/": "/index.html", "/app": "/app.html", "/login": "/auth.html", "/signup": "/auth.html", "/privacy": "/privacy.html" };
 const COMPRESSIBLE = new Set([".html", ".css", ".js", ".svg", ".json", ".webmanifest"]);
 const gzipCache = new Map();
 
@@ -422,6 +437,7 @@ const SECURITY_HEADERS = {
 
 const server = createServer(async (req, res) => {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+  if (isSecure(req)) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
   const path = new URL(req.url, "http://x").pathname;
   const started = performance.now();
   try {

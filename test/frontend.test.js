@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 const pub = new URL("../public/", import.meta.url);
 const read = (f) => readFileSync(new URL(f, pub), "utf8");
 
-test("every #id used by app.js exists in index.html", () => {
-  const html = read("index.html");
+test("every #id used by app.js exists in app.html", () => {
+  const html = read("app.html");
   const js = read("app.js");
   const ids = new Set();
   for (const m of js.matchAll(/\$\(\s*["'`]#([\w-]+)["'`]\s*\)/g)) ids.add(m[1]);
@@ -32,10 +32,17 @@ test("all browser scripts parse", () => {
 });
 
 test("html pages only load same-origin scripts (CSP: script-src 'self')", () => {
-  for (const page of ["index.html", "share.html"]) {
+  for (const page of ["index.html", "app.html", "auth.html", "share.html", "privacy.html"]) {
     const srcs = [...read(page).matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1]);
     assert.ok(srcs.length > 0);
     for (const src of srcs) assert.ok(!/^https?:/.test(src), `${page} loads external script ${src}`);
     assert.ok(!/<script(?![^>]*\ssrc=)[^>]*>\s*\S/.test(read(page)), `${page} has an inline script`);
   }
+});
+
+test("every #id used by auth.js exists in auth.html", () => {
+  const html = read("auth.html");
+  const ids = [...read("auth.js").matchAll(/\$\(\s*["'`]([\w-]+)["'`]\s*\)/g)].map((m) => m[1]);
+  assert.ok(ids.length > 5);
+  assert.deepEqual(ids.filter((id) => !html.includes(`id="${id}"`)), []);
 });

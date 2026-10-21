@@ -171,9 +171,9 @@ export function openDb(file) {
     userById: (id) => publicUser(q.userById.get(id)),
     userByFeedToken: (token) => publicUser(q.userByFeed.get(token)),
     // Creates a user. The very first account inherits tasks/trophies made before accounts existed.
-    createUser(username, passHash) {
+    createUser(username, passHash, { claimLegacy = true } = {}) {
       return tx(() => {
-        const first = q.userCount.get().n === 0;
+        const first = claimLegacy && q.userCount.get().n === 0;
         const id = randomUUID();
         q.insertUser.run(id, username, passHash, randomBytes(24).toString("hex"), Date.now());
         let claimed = 0;
