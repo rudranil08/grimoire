@@ -38,6 +38,19 @@ On a PaaS (Render, Railway, Fly.io…): use the Dockerfile, mount a volume at `/
 `TRUST_PROXY=1` so HTTPS requests get `Secure` cookies + HSTS and rate limits see real client IPs.
 Without Docker: `NODE_ENV=production DB_FILE=/path/on/disk/grimoire.db npm start`.
 
+### Railway (recommended)
+
+`railway.json` is included (Dockerfile build, `/api/health` health check).
+
+1. **New Project → Deploy from GitHub repo** → pick this repo.
+2. On the service: **Variables** → add `TRUST_PROXY=1` and `RAILWAY_RUN_UID=0`
+   (the image runs as a non-root user; this lets it write to the volume).
+3. **Right-click the service → Attach volume**, mount path **`/data`**.
+4. **Settings → Networking → Generate Domain**. Open it — sign up, and you're live.
+
+> Static-only hosts (Vercel, Netlify, GitHub Pages) serve the pages but not the API, so accounts
+> won't work there. `vercel.json` only maps the clean URLs.
+
 GitHub Actions runs the test suite on Node 22 and 24 for every push and pull request.
 
 ## Features
