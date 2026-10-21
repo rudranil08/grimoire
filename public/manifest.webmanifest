@@ -1,0 +1,17 @@
+{
+  "name": "Grimoire — A Haunted Task Ledger",
+  "short_name": "Grimoire",
+  "description": "A Halloween task manager. The tasks that wouldn't die.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0c0b0a",
+  "theme_color": "#0c0b0a",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Calendar", "url": "/?view=calendar" },
+    { "name": "Stats", "url": "/?view=stats" }
+  ]
+}

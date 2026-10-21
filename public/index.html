@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Grimoire — A Haunted Task Ledger</title>
+  <meta name="description" content="A Halloween-themed task manager. Banish your to-dos before midnight." />
+  <meta name="theme-color" content="#0c0b0a" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎃</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Special+Elite&display=swap" rel="stylesheet" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+  <link rel="stylesheet" href="styles.css" />
+  <script src="theme-boot.js"></script>
+</head>
+<body>
+  <!-- ========== Atmosphere ========== -->
+  <div class="sky" aria-hidden="true">
+    <canvas id="stars"></canvas>
+    <div class="moon"><span class="crater c1"></span><span class="crater c2"></span><span class="crater c3"></span></div>
+    <div class="bats">
+      <svg class="bat b1" viewBox="0 0 64 32"><use href="#bat" /></svg>
+      <svg class="bat b2" viewBox="0 0 64 32"><use href="#bat" /></svg>
+      <svg class="bat b3" viewBox="0 0 64 32"><use href="#bat" /></svg>
+      <svg class="bat b4" viewBox="0 0 64 32"><use href="#bat" /></svg>
+    </div>
+    <div class="fog fog-1"></div>
+    <div class="fog fog-2"></div>
+    <svg class="skyline" viewBox="0 0 1440 260" preserveAspectRatio="xMidYMax slice">
+      <!-- far hills -->
+      <path class="hill-far" d="M0 170 C 180 120, 320 150, 470 130 S 760 90, 930 125 S 1240 110, 1440 140 V260 H0Z" />
+      <!-- haunted manor -->
+      <g class="manor">
+        <rect x="1040" y="70" width="14" height="40" />
+        <polygon points="1030,72 1047,30 1064,72" />
+        <rect x="1060" y="100" width="150" height="80" />
+        <polygon points="1050,104 1135,52 1220,104" />
+        <rect x="1180" y="60" width="26" height="60" />
+        <polygon points="1172,62 1193,18 1214,62" />
+        <rect x="1100" y="40" width="6" height="30" />
+        <rect class="win" x="1078" y="116" width="12" height="18" rx="6" />
+        <rect class="win w2" x="1129" y="116" width="12" height="18" rx="6" />
+        <rect class="win w3" x="1188" y="80" width="10" height="14" rx="5" />
+        <rect class="win" x="1180" y="130" width="12" height="18" rx="6" />
+      </g>
+      <!-- near hill -->
+      <path class="hill-near" d="M0 210 C 220 175, 380 200, 560 190 S 900 160, 1100 180 S 1320 170, 1440 185 V260 H0Z" />
+      <!-- dead tree -->
+      <g class="tree">
+        <path d="M210 205 C 212 170, 205 150, 214 120 C 200 105, 182 100, 165 86 M214 120 C 222 100, 240 90, 262 82 M209 160 C 190 150, 176 140, 168 126 M213 140 C 232 132, 246 122, 252 110 M262 82 C 270 74, 274 66, 280 60 M165 86 C 158 80, 152 74, 150 66" />
+      </g>
+      <!-- gravestones -->
+      <g class="graves">
+        <path d="M360 200 v-26 a14 14 0 0 1 28 0 v26z" />
+        <path d="M402 202 v-18 a10 10 0 0 1 20 0 v18z" />
+        <path d="M640 196 v-22 h-8 v-8 h8 v-8 h8 v8 h8 v8 h-8 v22z" />
+        <path d="M720 196 v-24 a13 13 0 0 1 26 0 v24z" />
+      </g>
+      <path class="ground" d="M0 235 C 300 225, 600 240, 900 230 S 1300 228, 1440 232 V260 H0Z" />
+    </svg>
+    <div class="candlelight" id="candlelight"></div>
+  </div>
+
+  <!-- SVG symbol defs -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="bat" viewBox="0 0 64 32">
+        <path d="M32 10c-1.6-3.2-3-4.6-3.6-4.8.4 1.6.2 3-.6 4.2C23 6 14 5 6 9c4 1 6.4 3.6 7 6.8 3.2-1.2 6.6-.6 8.6 1.8 2.2-1.4 5-1.6 7.4-.4L32 22l3-4.8c2.4-1.2 5.2-1 7.4.4 2-2.4 5.4-3 8.6-1.8.6-3.2 3-5.8 7-6.8-8-4-17-3-22.8.4-.8-1.2-1-2.6-.6-4.2-.6.2-2 1.6-3.6 4.8z" fill="currentColor"/>
+      </symbol>
+      <symbol id="ghost" viewBox="0 0 40 48">
+        <path d="M20 2C9.5 2 4 10 4 20v24l5-4 5 4 6-4 6 4 5-4 5 4V20C36 10 30.5 2 20 2z" fill="currentColor"/>
+        <circle cx="14" cy="20" r="3" fill="#1a1028"/><circle cx="26" cy="20" r="3" fill="#1a1028"/>
+        <ellipse cx="20" cy="29" rx="3" ry="4" fill="#1a1028"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- ========== App ========== -->
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Grimoire home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 48 48"><path d="M24 8c-2-4-1-6 1-7-1 3 0 5 1 6" stroke="#6b8f3a" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M24 9c-6-3-17-1-19 13-2 13 7 22 19 22s21-9 19-22C41 8 30 6 24 9z" fill="url(#pg)"/><path d="M15 21l5 3-5 2zM33 21l-5 3 5 2zM14 31c3 3 6 2 7 1l3 2 3-2c1 1 4 2 7-1-3 5-7 6-10 6s-7-1-10-6z" fill="#2a1306"/><defs><radialGradient id="pg" cx=".4" cy=".35" r=".8"><stop offset="0" stop-color="#ffb347"/><stop offset=".55" stop-color="#ff7a1a"/><stop offset="1" stop-color="#b8430a"/></radialGradient></defs></svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-name">Grimoire</span>
+          <span class="brand-sub">a haunted task ledger</span>
+        </span>
+      </a>
+      <div class="topbar-right">
+        <button type="button" class="challenge-chip" id="challengeChip" title="Witching Hour challenge — click to abandon" hidden></button>
+        <span class="sync" id="sync" data-state="offline" role="status"><i></i><span class="sync-label">Offline</span></span>
+        <div class="user-wrap">
+          <button class="user-btn" id="userBtn" aria-haspopup="menu" aria-expanded="false" hidden>
+            <span class="user-dot" aria-hidden="true">☠</span><span id="userName"></span>
+          </button>
+          <div class="user-menu" id="userMenu" role="menu" hidden>
+            <button type="button" role="menuitem" id="copyFeed">📅 Copy calendar feed URL</button>
+            <button type="button" role="menuitem" id="rotateFeed">♻ New calendar feed URL</button>
+            <button type="button" role="menuitem" id="shareBtn">🔗 Share a read-only poster</button>
+            <button type="button" role="menuitem" id="unshareBtn" hidden>🚫 Stop sharing</button>
+            <button type="button" role="menuitemcheckbox" id="remindToggle" aria-checked="false">🔔 Due-date reminders: <b>off</b></button>
+            <button type="button" role="menuitem" id="changePass">🔑 Change password</button>
+            <button type="button" role="menuitem" id="logoutBtn">⎋ Log out</button>
+            <button type="button" role="menuitem" id="logoutAll">⎋ Sign out everywhere</button>
+            <button type="button" role="menuitem" id="deleteAcct" class="danger">☠ Delete account…</button>
+          </div>
+        </div>
+        <button class="icon-btn palette-btn" id="paletteBtn" title="Command palette (Ctrl/⌘ K)" aria-label="Open command palette">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M9 6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3z"/></svg>
+        </button>
+        <button class="icon-btn" id="themeToggle" title="Change theme (T)" aria-label="Change theme">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-.9-.7-1.3-.7-2.2 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.6 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>
+        </button>
+        <button class="icon-btn" id="soundToggle" aria-pressed="false" title="Toggle ambient sound">
+          <svg viewBox="0 0 24 24" class="ico"><path d="M11 5 6 9H3v6h3l5 4z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/><path class="mute" d="M16 9l6 6M22 9l-6 6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <header class="print-head" aria-hidden="true">
+      <p>Wanted — dead or done</p>
+      <h1>The tasks that wouldn't die</h1>
+    </header>
+    <main class="layout">
+      <!-- ===== Left: hero + stats ===== -->
+      <aside class="side">
+        <section class="card hero" aria-labelledby="heroTitle">
+          <p class="eyebrow">Now showing · Oct 31 · One night only</p>
+          <h1 id="heroTitle" class="hero-title"><span class="ht-small">The tasks that</span><em>wouldn't die!</em></h1>
+          <p class="hero-tag">They crawled out of your inbox. Only you can stop them.</p>
+
+          <div class="countdown" id="countdown" aria-live="off">
+            <div class="cd-unit"><span class="cd-num" data-unit="d">00</span><span class="cd-lbl">days</span></div>
+            <span class="cd-sep">:</span>
+            <div class="cd-unit"><span class="cd-num" data-unit="h">00</span><span class="cd-lbl">hours</span></div>
+            <span class="cd-sep">:</span>
+            <div class="cd-unit"><span class="cd-num" data-unit="m">00</span><span class="cd-lbl">mins</span></div>
+            <span class="cd-sep">:</span>
+            <div class="cd-unit"><span class="cd-num" data-unit="s">00</span><span class="cd-lbl">secs</span></div>
+          </div>
+        </section>
+
+        <section class="card soul" aria-labelledby="soulTitle">
+          <div class="soul-ring">
+            <svg viewBox="0 0 160 160" class="ring">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#efe4cc"/>
+                  <stop offset=".5" stop-color="#f0a500"/>
+                  <stop offset="1" stop-color="#d1141b"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-track" cx="80" cy="80" r="68"/>
+              <circle class="ring-fill" id="ringFill" cx="80" cy="80" r="68"/>
+            </svg>
+            <div class="lantern" id="lantern" aria-hidden="true">
+              <svg viewBox="0 0 100 100">
+                <path d="M50 18c-3-8-1-12 3-14-2 5-1 9 1 12" stroke="#7aa246" stroke-width="4" fill="none" stroke-linecap="round"/>
+                <ellipse cx="32" cy="58" rx="22" ry="32" fill="#e8661a"/>
+                <ellipse cx="68" cy="58" rx="22" ry="32" fill="#e8661a"/>
+                <ellipse cx="50" cy="58" rx="22" ry="34" fill="#ff7a1a"/>
+                <g class="lantern-face">
+                  <path d="M30 48l12 6-12 5z M70 48l-12 6 12 5z"/>
+                  <path d="M47 60l3-6 3 6z"/>
+                  <path d="M27 68c6 9 14 12 23 12s17-3 23-12c-4 2-7 2-9 1l-3 5-4-4-4 4-3-5-3 5-4-4-4 4-3-5c-2 1-5 1-9-1z"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div class="soul-meta">
+            <p class="eyebrow" id="soulTitle">Souls collected</p>
+            <p class="soul-pct"><span id="pctNum">0</span><span class="pct">%</span></p>
+            <p class="soul-caption" id="soulCaption">The lantern is cold. Light it.</p>
+            <p class="soul-sub" id="soulSub"></p>
+          </div>
+          <div class="trophies" aria-labelledby="trophyTitle">
+            <div class="realms-head">
+              <p class="eyebrow" id="trophyTitle">Trophy case</p>
+              <span class="trophy-count" id="trophyCount">0/9</span>
+            </div>
+            <ul class="trophy-grid" id="trophyGrid"></ul>
+          </div>
+        </section>
+        <section class="card realms" aria-labelledby="realmTitle">
+          <div class="realms-head">
+            <p class="eyebrow" id="realmTitle">Body count by realm</p>
+            <button type="button" class="link-btn realm-clear" id="realmClear" hidden>Show all</button>
+          </div>
+          <ul class="realm-list" id="realmList"></ul>
+        </section>
+      </aside>
+
+      <!-- ===== Right: tasks ===== -->
+      <section class="main" aria-label="Tasks">
+        <form class="card composer" id="composer" autocomplete="off">
+          <div class="composer-row">
+            <span class="composer-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" class="ico"><path d="M12 3c2 3 5 4 5 9a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-5 1-8z"/></svg>
+            </span>
+            <input id="taskInput" class="composer-input" type="text" maxlength="140" placeholder="What must be done before midnight?" aria-label="New task" />
+            <button class="btn-primary" type="submit">
+              <span>Summon</span>
+              <svg viewBox="0 0 24 24" class="ico"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+          <div class="quick-preview" id="quickPreview" aria-live="polite" hidden></div>
+          <div class="composer-opts">
+            <div class="seg" role="radiogroup" aria-label="Dread level">
+              <label class="seg-opt whisper"><input type="radio" name="priority" value="whisper" checked /><span>Whisper</span></label>
+              <label class="seg-opt howl"><input type="radio" name="priority" value="howl" /><span>Howl</span></label>
+              <label class="seg-opt scream"><input type="radio" name="priority" value="scream" /><span>Scream</span></label>
+            </div>
+            <div class="selects">
+              <label class="chip-select">
+                <span class="sr-only">Realm</span>
+                <select id="tagInput">
+                  <option value="crypt">🕯️ Crypt · Home</option>
+                  <option value="ledger">📜 Ledger · Work</option>
+                  <option value="cauldron">🧪 Cauldron · Party</option>
+                  <option value="coven">🦇 Coven · Social</option>
+                  <option value="errand">🧹 Broom · Errands</option>
+                </select>
+              </label>
+              <label class="chip-select date">
+                <span class="sr-only">Due date</span>
+                <svg viewBox="0 0 24 24" class="ico sm"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                <input id="dueInput" type="date" class="is-empty" />
+              </label>
+              <label class="chip-select repeat">
+                <span class="sr-only">Repeat</span>
+                <select id="repeatInput">
+                  <option value="">↻ Once</option>
+                  <option value="daily">↻ Daily</option>
+                  <option value="weekly">↻ Weekly</option>
+                  <option value="monthly">↻ Monthly</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </form>
+
+        <div class="toolbar">
+          <div class="tabs" role="tablist" aria-label="Filter tasks">
+            <button class="tab is-active" role="tab" data-filter="all" aria-selected="true">All<span class="tab-count" data-count="all">0</span></button>
+            <button class="tab" role="tab" data-filter="tonight" aria-selected="false" title="Due today or overdue (4)">Tonight<span class="tab-count hot" data-count="tonight">0</span></button>
+            <button class="tab" role="tab" data-filter="active" aria-selected="false">Lurking<span class="tab-count" data-count="active">0</span></button>
+            <button class="tab" role="tab" data-filter="done" aria-selected="false">Vanquished<span class="tab-count" data-count="done">0</span></button>
+            <span class="tab-glider" aria-hidden="true"></span>
+          </div>
+          <div class="tools">
+            <div class="view-switch" role="group" aria-label="View">
+              <button type="button" data-view="list" aria-pressed="true" title="List view (L)">
+                <svg viewBox="0 0 24 24" class="ico sm"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>List</span>
+              </button>
+              <button type="button" data-view="calendar" aria-pressed="false" title="Calendar view (C)">
+                <svg viewBox="0 0 24 24" class="ico sm"><rect x="3.5" y="5" width="17" height="15"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span>Calendar</span>
+              </button>
+              <button type="button" data-view="stats" aria-pressed="false" title="Stats (S)">
+                <svg viewBox="0 0 24 24" class="ico sm"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Stats</span>
+              </button>
+            </div>
+            <label class="search">
+              <svg viewBox="0 0 24 24" class="ico sm"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+              <input id="searchInput" type="search" placeholder="Search the tome…" aria-label="Search tasks" title="Try: is:late · !scream · #work · due:week · is:done" />
+            </label>
+            <label class="chip-select sort">
+              <span class="sr-only">Sort</span>
+              <select id="sortInput">
+                <option value="manual">Ritual order</option>
+                <option value="due">Due soonest</option>
+                <option value="priority">Most dreadful</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="board">
+        <ul class="tasks" id="taskList" aria-label="Tasks"></ul>
+        <div class="calendar" id="calendar" hidden></div>
+        <div class="stats-view" id="statsView" hidden></div>
+
+        <div class="empty" id="emptyState" hidden>
+          <svg class="empty-ghost" viewBox="0 0 40 48"><use href="#ghost"/></svg>
+          <h3 id="emptyTitle">Eerily quiet…</h3>
+          <p id="emptyText">No tasks lurk here. Summon one above.</p>
+          <button type="button" class="link-btn clear-search" id="clearSearch" hidden>Clear search</button>
+          <div class="quickstart" id="quickstart" hidden>
+            <p class="qs-label">Or raise one from the dead:</p>
+            <div class="qs-chips">
+              <button type="button" class="qs-chip" data-title="Carve the jack-o'-lantern" data-tag="crypt" data-priority="howl">🎃 Carve the jack-o'-lantern</button>
+              <button type="button" class="qs-chip" data-title="Buy candy for trick-or-treaters" data-tag="errand" data-priority="whisper">🍬 Buy candy</button>
+              <button type="button" class="qs-chip" data-title="Finish the costume" data-tag="cauldron" data-priority="scream">🧛 Finish the costume</button>
+              <button type="button" class="qs-chip" data-title="Invite the coven to the party" data-tag="coven" data-priority="howl">🦇 Invite the coven</button>
+            </div>
+            <p class="qs-label qs-or">…or cast a whole spell from the spellbook:</p>
+            <div class="qs-chips">
+              <button type="button" class="qs-chip qs-spell" data-spell="party">🎉 Halloween Party · 6</button>
+              <button type="button" class="qs-chip qs-spell" data-spell="costume">🧛 Costume Crafting · 5</button>
+              <button type="button" class="qs-chip qs-spell" data-spell="house">🏚️ Haunt the House · 4</button>
+              <button type="button" class="qs-chip qs-spell" data-spell="trick">🍬 Trick-or-Treat · 4</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-foot">
+      <p class="keys"><kbd>?</kbd> all shortcuts <kbd>⌘K</kbd> commands <kbd>⌘Z</kbd> undo <kbd>⌘/⇧ click</kbd> multi-select <kbd>N</kbd> new task <kbd>/</kbd> search <kbd>1</kbd>–<kbd>4</kbd> tabs <kbd>J</kbd><kbd>K</kbd> move <kbd>⇧J</kbd><kbd>⇧K</kbd> reorder <kbd>X</kbd> slay <kbd>E</kbd> edit <kbd>P</kbd> dread <kbd>F</kbd> séance <kbd>R</kbd> repeat <kbd>T</kbd> theme <kbd>L</kbd><kbd>C</kbd><kbd>S</kbd> views <kbd>Del</kbd> banish</p>
+      <p class="foot-links"><a href="/api/export" download id="exportLink">⬇ Export a backup (JSON)</a> <span class="sep">·</span> <label class="import-link">⬆ Import a backup<input type="file" id="importFile" accept="application/json,.json" hidden /></label> <span class="sep">·</span> <button type="button" class="import-link grave-link" id="graveLink">🪦 Graveyard</button> <span class="sep">·</span> <a href="/api/calendar.ics" id="icsLink" title="Subscribe from Apple Calendar, Google Calendar or Outlook">📅 Calendar feed (.ics)</a></p>
+      <p>A Grimoire Picture · Rated R for Responsibilities · No tasks were harmed in the making of this list</p>
+    </footer>
+  </div>
+
+  <div class="graveyard keys-sheet" id="keysSheet" role="dialog" aria-modal="true" aria-labelledby="keysTitle" hidden>
+    <div class="grave-card">
+      <div class="grave-head">
+        <h2 id="keysTitle">Incantations <small>keyboard shortcuts</small></h2>
+        <button type="button" class="icon-btn sm" id="keysClose" aria-label="Close">✕</button>
+      </div>
+      <dl class="keys-list">
+        <dt><kbd>⌘</kbd><kbd>K</kbd></dt><dd>Command palette</dd>
+        <dt><kbd>⌘</kbd><kbd>Z</kbd></dt><dd>Undo last change</dd>
+        <dt><kbd>⇧</kbd><kbd>⌘</kbd><kbd>Z</kbd></dt><dd>Redo</dd>
+        <dt><kbd>N</kbd></dt><dd>New task</dd>
+        <dt><kbd>/</kbd></dt><dd>Search</dd>
+        <dt><kbd>1</kbd>–<kbd>4</kbd></dt><dd>All · Lurking · Vanquished · Tonight</dd>
+        <dt><kbd>L</kbd> <kbd>C</kbd> <kbd>S</kbd></dt><dd>List · Calendar · Stats</dd>
+        <dt><kbd>J</kbd> <kbd>K</kbd></dt><dd>Move between tasks</dd>
+        <dt><kbd>⇧J</kbd> <kbd>⇧K</kbd></dt><dd>Reorder the selected task</dd>
+        <dt><kbd>X</kbd> / <kbd>Space</kbd></dt><dd>Slay (complete)</dd>
+        <dt><kbd>E</kbd></dt><dd>Rename</dd>
+        <dt><kbd>P</kbd> <kbd>R</kbd></dt><dd>Cycle dread · repeat</dd>
+        <dt><kbd>F</kbd></dt><dd>Start a séance (focus timer)</dd>
+        <dt><kbd>D</kbd></dt><dd>Duplicate the selected task</dd>
+        <dt><kbd>Del</kbd></dt><dd>Banish</dd>
+        <dt><kbd>T</kbd></dt><dd>Next theme</dd>
+        <dt><kbd>Z</kbd></dt><dd>Zen mode</dd>
+        <dt><kbd>G</kbd></dt><dd>Let fate pick a task</dd>
+        <dt><kbd>⌘</kbd>/<kbd>⇧</kbd> click</dt><dd>Select several tasks</dd>
+        <dt><kbd>Esc</kbd></dt><dd>Close · clear selection</dd>
+        <dt><kbd>?</kbd></dt><dd>This sheet</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="tour" id="tour" hidden>
+    <div class="tour-spot" id="tourSpot"></div>
+    <div class="tour-card" id="tourCard" role="dialog" aria-modal="true" aria-labelledby="tourTitle" aria-describedby="tourText">
+      <p class="eyebrow" id="tourStep"></p>
+      <h3 id="tourTitle"></h3>
+      <p id="tourText"></p>
+      <div class="tour-actions">
+        <button type="button" class="link-btn" id="tourSkip">Skip tour</button>
+        <button type="button" class="btn-primary" id="tourNext">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="bulkbar" id="bulkbar" role="toolbar" aria-label="Bulk actions" hidden>
+    <span class="bulk-count" id="bulkCount"></span>
+    <button type="button" data-bulk="slay">✓ Slay</button>
+    <button type="button" data-bulk="whisper" class="b-whisper">Whisper</button>
+    <button type="button" data-bulk="howl" class="b-howl">Howl</button>
+    <button type="button" data-bulk="scream" class="b-scream">Scream</button>
+    <button type="button" data-bulk="today">Due today</button>
+    <button type="button" data-bulk="tomorrow">Tomorrow</button>
+    <button type="button" data-bulk="spell" title="Save these tasks as a reusable spell">📖 Save as spell</button>
+    <button type="button" data-bulk="banish" class="b-danger">Banish</button>
+    <button type="button" data-bulk="clear" class="b-x" aria-label="Clear selection">✕</button>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    <span id="toastText"></span>
+    <button class="link-btn" id="toastUndo" type="button">Undo</button>
+  </div>
+
+  <input type="date" id="duePicker" class="due-picker" tabindex="-1" aria-hidden="true" />
+  <div class="auth" id="auth" role="dialog" aria-modal="true" aria-labelledby="authTitle" hidden>
+    <form class="auth-card" id="authForm" novalidate>
+      <p class="eyebrow">Now showing · members only</p>
+      <h2 class="auth-title" id="authTitle">Enter the <em>Grimoire</em></h2>
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab" role="tab" data-mode="login" aria-selected="true">Log in</button>
+        <button type="button" class="auth-tab" role="tab" data-mode="register" aria-selected="false">Sign up</button>
+      </div>
+      <label class="auth-field"><span>Name</span>
+        <input id="authUser" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="24" required />
+      </label>
+      <label class="auth-field"><span>Password</span>
+        <input id="authPass" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="200" required />
+      </label>
+      <p class="auth-hint" id="authHint" hidden>3–24 letters, numbers, _ or -. Password of 8+ characters. The first account to sign up inherits any tasks already here.</p>
+      <p class="auth-error" id="authError" role="alert"></p>
+      <button type="submit" class="btn-primary auth-submit" id="authSubmit">Enter</button>
+    </form>
+  </div>
+
+  <div class="auth acct" id="acct" role="dialog" aria-modal="true" aria-labelledby="acctTitle" hidden>
+    <form class="auth-card" id="acctForm" novalidate>
+      <h2 class="auth-title" id="acctTitle"></h2>
+      <p class="auth-hint" id="acctText"></p>
+      <label class="auth-field"><span>Current password</span>
+        <input id="acctPass" type="password" autocomplete="current-password" maxlength="200" />
+      </label>
+      <label class="auth-field" id="acctNewWrap"><span>New password</span>
+        <input id="acctNew" type="password" autocomplete="new-password" minlength="8" maxlength="200" />
+      </label>
+      <p class="auth-error" id="acctError" role="alert"></p>
+      <div class="acct-actions">
+        <button type="button" class="link-btn" id="acctCancel">Cancel</button>
+        <button type="submit" class="btn-primary" id="acctSubmit"></button>
+      </div>
+    </form>
+  </div>
+
+  <div class="graveyard" id="graveyard" role="dialog" aria-modal="true" aria-labelledby="graveTitle" hidden>
+    <div class="grave-card">
+      <div class="grave-head">
+        <h2 id="graveTitle">The Graveyard <small id="graveCount"></small></h2>
+        <button type="button" class="icon-btn sm" id="graveClose" aria-label="Close graveyard">✕</button>
+      </div>
+      <ul class="grave-list" id="graveList"></ul>
+      <div class="grave-foot">
+        <span>Buried tasks rest here. Raise one to bring it back.</span>
+        <button type="button" class="link-btn" id="graveEmpty" hidden>Empty the graveyard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="palette" id="palette" role="dialog" aria-modal="true" aria-label="Command palette" hidden>
+    <div class="palette-card">
+      <div class="palette-search">
+        <svg viewBox="0 0 24 24" class="ico"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.2-4.2"/></svg>
+        <input id="paletteInput" type="text" placeholder="Type a command or find a task…" autocomplete="off" spellcheck="false"
+               role="combobox" aria-expanded="true" aria-controls="paletteList" aria-autocomplete="list" />
+        <kbd>Esc</kbd>
+      </div>
+      <ul class="palette-list" id="paletteList" role="listbox"></ul>
+      <p class="palette-foot"><kbd>↑</kbd><kbd>↓</kbd> move <kbd>Enter</kbd> run <kbd>Esc</kbd> close</p>
+    </div>
+  </div>
+
+  <div class="seance" id="seance" role="dialog" aria-modal="true" aria-labelledby="seanceTask" hidden>
+    <div class="seance-card">
+      <p class="eyebrow" id="seanceKicker">A séance is in session</p>
+      <h2 class="seance-task" id="seanceTask"></h2>
+      <div class="candle" aria-hidden="true">
+        <div class="flame" id="flame"></div>
+        <div class="wick"></div>
+        <div class="wax" id="wax"><span class="drip d1"></span><span class="drip d2"></span></div>
+        <div class="dish"></div>
+      </div>
+      <div class="seance-time" id="seanceTime" role="timer" aria-live="off">25:00</div>
+      <div class="seance-presets" role="group" aria-label="Session length">
+        <button type="button" data-min="15">15</button>
+        <button type="button" data-min="25" aria-pressed="true">25</button>
+        <button type="button" data-min="50">50</button>
+        <span>min</span>
+      </div>
+      <div class="seance-actions" id="seanceRunning">
+        <button type="button" class="btn-primary" id="seancePause">Pause</button>
+        <button type="button" class="icon-btn" id="seanceMore" title="Add 5 minutes" aria-label="Add 5 minutes">+5</button>
+        <button type="button" class="link-btn" id="seanceEnd">End séance</button>
+      </div>
+      <div class="seance-actions" id="seanceDone" hidden>
+        <button type="button" class="btn-primary" id="seanceSlay">Slay the task</button>
+        <button type="button" class="link-btn" id="seanceAgain">Another round</button>
+        <button type="button" class="link-btn" id="seanceClose">Close</button>
+      </div>
+      <p class="seance-total" id="seanceTotal"></p>
+    </div>
+  </div>
+
+  <div class="unlock" id="unlock" role="status" aria-live="polite">
+    <span class="unlock-icon" id="unlockIcon"></span>
+    <span class="unlock-text"><span class="unlock-kicker">Trophy unlocked</span><span class="unlock-name" id="unlockName"></span><span class="unlock-desc" id="unlockDesc"></span></span>
+  </div>
+  <div class="fx-layer" id="fx" aria-hidden="true"></div>
+  <div class="lightning" id="lightning" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <template id="taskTpl">
+    <li class="task" draggable="true" tabindex="-1">
+      <button class="check" type="button" aria-label="Mark complete">
+        <svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+      </button>
+      <div class="task-body">
+        <p class="task-title" spellcheck="false"></p>
+        <div class="task-meta">
+          <button type="button" class="pill prio" title="Click to change dread level"></button>
+          <button type="button" class="pill tag" title="Click to change realm"></button>
+          <button type="button" class="pill due" title="Click to change due date"></button>
+          <button type="button" class="pill snooze" title="Snooze to tomorrow" hidden>💤 +1d</button>
+          <button type="button" class="pill steps" title="Show checklist" hidden></button>
+          <button type="button" class="pill repeat" title="Click to change how often it repeats" hidden></button>
+          <span class="pill focus" title="Time spent in séance on this task" hidden></span>
+        </div>
+        <p class="task-notes" title="Click to edit notes" hidden></p>
+        <div class="subtasks" hidden></div>
+      </div>
+      <div class="task-actions">
+        <button class="icon-btn sm seance-btn" type="button" aria-label="Start a focus séance" title="Séance (focus timer)">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg>
+        </button>
+        <button class="icon-btn sm steps-btn" type="button" aria-label="Checklist" title="Checklist">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="m4 6 1.5 1.5L8 5M4 12l1.5 1.5L8 11M4 18l1.5 1.5L8 17M11 6h9M11 12h9M11 18h9"/></svg>
+        </button>
+        <button class="icon-btn sm note" type="button" aria-label="Notes" title="Notes">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg>
+        </button>
+        <button class="icon-btn sm edit" type="button" aria-label="Edit task" title="Edit">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>
+        </button>
+        <button class="icon-btn sm del" type="button" aria-label="Banish task" title="Banish">
+          <svg viewBox="0 0 24 24" class="ico sm"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+        </button>
+      </div>
+      <span class="grip" aria-hidden="true"><i></i><i></i><i></i></span>
+    </li>
+  </template>
+
+  <script src="quickadd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
