@@ -164,7 +164,7 @@ a { color: inherit; }
 .prose p, .prose li { color: var(--bone-2); }
 .prose code { color: var(--mustard); }
 .lost { min-height: calc(100dvh - 70px); display: grid; place-items: center; text-align: center; padding: 40px 16px; }
-.lost .ghost { font-size: 96px; line-height: 1; filter: drop-shadow(6px 6px 0 var(--blood)); animation: float 3s ease-in-out infinite; }
+.lost-ghost { font-size: 96px; line-height: 1; filter: drop-shadow(6px 6px 0 var(--blood)); animation: float 3s ease-in-out infinite; }
 @keyframes float { 50% { transform: translateY(-14px) rotate(-4deg); } }
 .lost h1 { margin: 18px 0 6px; font-family: var(--font-display); font-weight: 400; font-size: clamp(48px, 9vw, 96px); line-height: .9; text-transform: uppercase; text-shadow: 5px 5px 0 var(--blood); }
 .lost p { margin: 0 0 24px; font-family: var(--font-type); font-size: 18px; color: var(--bone-2); }
